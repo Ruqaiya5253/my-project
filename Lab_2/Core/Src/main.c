@@ -131,10 +131,7 @@ int main(void)
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
-  // TASK 1
-
-
-
+  // TASK 2
   void verifyIdentity(int a, int b) {
       // (a) Declare variables (passed as parameters here for flexibility)
       
