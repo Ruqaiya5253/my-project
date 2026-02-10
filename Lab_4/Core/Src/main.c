@@ -125,34 +125,42 @@ static void MX_USB_PCD_Init(void);
 
 
 //Task 3 Extension
+// volatile uint32_t overflow_count = 0;
+// volatile uint32_t last_capture = 0;
+// char msg[64]; // Buffer for the string
+// float frequency; // Matches the variable in your callback
+
+
+
+volatile float frequency = 0.0f; 
 volatile uint32_t overflow_count = 0;
 volatile uint32_t last_capture = 0;
-char msg[64]; // Buffer for the string
-extern volatile float frequency; // Matches the variable in your callback
+char msg[64];
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM3) {
-        overflow_count++; // Increment every 1ms
+        overflow_count++; 
     }
 }
+
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM3) {
         uint32_t current_capture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-        uint32_t total_ticks;
+        
+        // Calculate difference and handle 16-bit wrap-around
+        int32_t diff = current_capture - last_capture;
+        if (diff < 0) diff += 1000; 
 
-        /* Calculate total ticks elapsed including overflows */
-        // Formula: (Number of 1ms resets * 1000) + current - last
-        total_ticks = (overflow_count * 1000) + current_capture - last_capture;
+        uint32_t total_ticks = (overflow_count * 1000) + diff;
 
         if (total_ticks > 0) {
-            // 1,000,000 ticks per second / total_ticks
             frequency = 1000000.0f / total_ticks;
         }
 
-        /* Reset for the next measurement */
         last_capture = current_capture;
-        overflow_count = 0; // Clear the overflow counter for the next cycle
+        overflow_count = 0; 
     }
 }
+
 
 //   uint32_t last_capture = 0, period = 0;
 //   float frequency = 0;
@@ -231,15 +239,9 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-  
-  int len = sprintf(msg, "Measured Frequency: %.2f Hz\r\n", frequency);
-
-  /* 3. Transmit via UART
-     Assuming 'huart2' is your UART handle from CubeMX */
-  HAL_UART_Transmit(&huart2, (uint8_t*)msg, len, HAL_MAX_DELAY);
-
-  /* 4. Wait 500ms before next print */
-  HAL_Delay(500);    
+    int len = sprintf(msg, "Measured Frequency: %.2f Hz\r\n", frequency);
+    HAL_UART_Transmit(&huart2, (uint8_t*)msg, len, HAL_MAX_DELAY);
+    HAL_Delay(500); 
 
     /* USER CODE BEGIN 3 */
   }
