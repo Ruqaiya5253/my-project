@@ -269,7 +269,6 @@ float motor1_speed = 0.0f;
 float motor1_factor = 1.0f;
 bool motor1_dir = true;
 
-// Repeat for Motor 2 if they need different speeds/sync
 float motor2_speed = 0.0f;
 float motor2_factor = 1.0f;
 bool motor2_dir = true;
