@@ -120,7 +120,7 @@ float32_t inputBuffer[FILTER_LEN] = {0};
 uint16_t bufferIndex = 0;
 float32_t filteredOutput = 0;
 float32_t rawVoltage = 0;
-
+uint32_t rawADC;
 void apply_moving_average(float32_t new_sample) {
     // 1. Insert new sample into circular buffer
     inputBuffer[bufferIndex] = new_sample;
@@ -134,13 +134,12 @@ void apply_moving_average(float32_t new_sample) {
 // Task 2
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
     if (hadc->Instance == ADC1) {
-        uint32_t rawADC = HAL_ADC_GetValue(hadc);
+        rawADC = HAL_ADC_GetValue(hadc);
         rawVoltage = (float32_t)rawADC * (3.3f / 4095.0f);
 
         apply_moving_average(rawVoltage);
 
-        // Send to Python Plotter
-        myPrintf("%0.3u,%0.3f\r\n", rawVoltage, filteredOutput);
+        myPrintf("%0.3f,%0.3f\r\n", rawVoltage, filteredOutput);
     }
 }
 
@@ -163,7 +162,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  //HAL_ADC_Init(&hadc1);
+  HAL_ADC_Init(&hadc1);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -182,7 +181,7 @@ int main(void)
   MX_USB_PCD_Init();
   MX_ADC4_Init();
   /* USER CODE BEGIN 2 */
-  //HAL_ADC_Start_IT(&hadc1);
+  HAL_ADC_Start_IT(&hadc1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -214,20 +213,24 @@ int main(void)
 
 
     //Task 2 With Polling;
-    HAL_ADC_Start(&hadc4); // Using ADC4 for polling as requested
-    if (HAL_ADC_PollForConversion(&hadc4, 10) == HAL_OK) {
-        uint32_t rawADC = HAL_ADC_GetValue(&hadc4);
-        rawVoltage = rawADC * (3.3f / 4095.0f);
+  //   HAL_ADC_Start(&hadc4); // Using ADC4 for polling as requested
+  //   if (HAL_ADC_PollForConversion(&hadc4, 10) == HAL_OK) {
+  //       uint32_t rawADC = HAL_ADC_GetValue(&hadc4);
+  //       rawVoltage = rawADC * (3.3f / 4095.0f);
         
-        apply_moving_average(rawVoltage);
+  //       apply_moving_average(rawVoltage);
 
-        // Format for Python script: "Raw,Filtered\n"
-        myPrintf("%0.3f,%0.3f\r\n", rawVoltage, filteredOutput);
-    }
-    HAL_ADC_Stop(&hadc4);
-    HAL_Delay(1); // Adjust delay to match your required sampling rate
-  }
+  //       // Format for Python script: "Raw,Filtered\n"
+  //       myPrintf("%0.3f,%0.3f\r\n", rawVoltage, filteredOutput);
+  //   }
+  //   HAL_ADC_Stop(&hadc4);
+  //   HAL_Delay(1); // Adjust delay to match your required sampling rate
+  // }
+  //Task 2 With Interupts;
+  HAL_Delay(20);
+  
   /* USER CODE END 3 */
+}
 }
 
 /**
