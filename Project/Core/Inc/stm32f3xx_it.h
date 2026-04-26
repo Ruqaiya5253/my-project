@@ -57,6 +57,7 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 void I2C2_EV_IRQHandler(void);
 void I2C2_ER_IRQHandler(void);
+void TIM2_IRQHandler(void);
 void TIM6_DAC_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 

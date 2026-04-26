@@ -27,6 +27,10 @@ set(MX_Application_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../startup_stm32f303xc.s
 
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/mpu6050.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/motor.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/encoder.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/pid.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Core/Src/complementary.c
 )
 
 # STM32 HAL/LL Drivers

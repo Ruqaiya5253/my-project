@@ -1,114 +1,108 @@
 #include "mpu6050.h"
 
-/* Registers */
-#define REG_PWR_MGMT_1   0x6B
+#define REG_PWR_MGMT_1 0x6B
 #define REG_ACCEL_CONFIG 0x1C
-#define REG_GYRO_CONFIG  0x1B
+#define REG_GYRO_CONFIG 0x1B
 #define REG_ACCEL_XOUT_H 0x3B
+#define REG_GYRO_XOUT_H 0x43
 
-/* PRIVATE buffer */
-static uint8_t rx_buffer[14];
+#define MPU6050_I2C_TIMEOUT_MS 5U
 
-/* ✅ DEFINE shared variables HERE */
-volatile uint8_t mpu_data_ready = 0;
-volatile uint8_t i2c_error_flag = 0;
-MPU6050_RawData mpu_latest_raw;
+static mpu6050_offsets_t g_offsets = {0};
 
-/* INIT */
-HAL_StatusTypeDef MPU6050_Init(I2C_HandleTypeDef *hi2c) {
-    uint8_t data;
+static int16_t to_i16(uint8_t msb, uint8_t lsb) {
+    return (int16_t)((uint16_t)msb << 8U | (uint16_t)lsb);
+}
 
-    data = 0x00;
-    if (HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_PWR_MGMT_1, 1, &data, 1, I2C_INIT_TIMEOUT) != HAL_OK)
+HAL_StatusTypeDef mpu6050_init(I2C_HandleTypeDef *hi2c) {
+    uint8_t value = 0x00U;
+
+    if (HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_PWR_MGMT_1, I2C_MEMADD_SIZE_8BIT, &value, 1U,
+                          MPU6050_I2C_TIMEOUT_MS) != HAL_OK) {
         return HAL_ERROR;
+    }
 
-    HAL_Delay(10);
-
-    data = 0x00;
-    if (HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_ACCEL_CONFIG, 1, &data, 1, I2C_INIT_TIMEOUT) != HAL_OK)
+    if (HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_ACCEL_CONFIG, I2C_MEMADD_SIZE_8BIT, &value, 1U,
+                          MPU6050_I2C_TIMEOUT_MS) != HAL_OK) {
         return HAL_ERROR;
+    }
 
-    data = 0x00;
-    if (HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_GYRO_CONFIG, 1, &data, 1, I2C_INIT_TIMEOUT) != HAL_OK)
+    if (HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_GYRO_CONFIG, I2C_MEMADD_SIZE_8BIT, &value, 1U,
+                          MPU6050_I2C_TIMEOUT_MS) != HAL_OK) {
         return HAL_ERROR;
+    }
 
     return HAL_OK;
 }
 
-/* START ASYNC READ */
-void MPU6050_ReadAsync_Start(I2C_HandleTypeDef *hi2c) {
-    if (hi2c->State == HAL_I2C_STATE_READY) {
-        HAL_I2C_Mem_Read_IT(hi2c, MPU6050_ADDR, REG_ACCEL_XOUT_H, 1, rx_buffer, 14);
+HAL_StatusTypeDef mpu6050_read_accel(I2C_HandleTypeDef *hi2c, mpu6050_axes_t *accel_out) {
+    uint8_t buf[6];
+    if (HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, REG_ACCEL_XOUT_H, I2C_MEMADD_SIZE_8BIT, buf, sizeof(buf),
+                         MPU6050_I2C_TIMEOUT_MS) != HAL_OK) {
+        return HAL_ERROR;
     }
+
+    accel_out->x = (float)to_i16(buf[0], buf[1]) / MPU6050_ACCEL_SCALE;
+    accel_out->y = (float)to_i16(buf[2], buf[3]) / MPU6050_ACCEL_SCALE;
+    accel_out->z = (float)to_i16(buf[4], buf[5]) / MPU6050_ACCEL_SCALE;
+
+    accel_out->x -= g_offsets.accel.x;
+    accel_out->y -= g_offsets.accel.y;
+    accel_out->z -= g_offsets.accel.z;
+    return HAL_OK;
 }
 
-/* PARSE */
-void MPU6050_ParseBuffer(const uint8_t buffer[14], MPU6050_RawData *raw) {
-    raw->accel_x = (int16_t)((buffer[0] << 8) | buffer[1]);
-    raw->accel_y = (int16_t)((buffer[2] << 8) | buffer[3]);
-    raw->accel_z = (int16_t)((buffer[4] << 8) | buffer[5]);
+HAL_StatusTypeDef mpu6050_read_gyro(I2C_HandleTypeDef *hi2c, mpu6050_axes_t *gyro_out) {
+    uint8_t buf[6];
+    if (HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, REG_GYRO_XOUT_H, I2C_MEMADD_SIZE_8BIT, buf, sizeof(buf),
+                         MPU6050_I2C_TIMEOUT_MS) != HAL_OK) {
+        return HAL_ERROR;
+    }
 
-    raw->gyro_x  = (int16_t)((buffer[8] << 8) | buffer[9]);
-    raw->gyro_y  = (int16_t)((buffer[10] << 8) | buffer[11]);
-    raw->gyro_z  = (int16_t)((buffer[12] << 8) | buffer[13]);
+    gyro_out->x = (float)to_i16(buf[0], buf[1]) / MPU6050_GYRO_SCALE;
+    gyro_out->y = (float)to_i16(buf[2], buf[3]) / MPU6050_GYRO_SCALE;
+    gyro_out->z = (float)to_i16(buf[4], buf[5]) / MPU6050_GYRO_SCALE;
+
+    gyro_out->x -= g_offsets.gyro.x;
+    gyro_out->y -= g_offsets.gyro.y;
+    gyro_out->z -= g_offsets.gyro.z;
+    return HAL_OK;
 }
 
-/* SCALE */
-void MPU6050_ConvertToScaled(const MPU6050_RawData *raw, MPU6050_ScaledData *scaled) {
-    scaled->ax = raw->accel_x / ACCEL_FS;
-    scaled->ay = raw->accel_y / ACCEL_FS;
-    scaled->az = raw->accel_z / ACCEL_FS;
+HAL_StatusTypeDef mpu6050_calibrate(I2C_HandleTypeDef *hi2c, uint16_t samples) {
+    mpu6050_axes_t accel = {0};
+    mpu6050_axes_t gyro = {0};
+    float ax = 0.0f, ay = 0.0f, az = 0.0f;
+    float gx = 0.0f, gy = 0.0f, gz = 0.0f;
 
-    scaled->gx = raw->gyro_x / GYRO_FS;
-    scaled->gy = raw->gyro_y / GYRO_FS;
-    scaled->gz = raw->gyro_z / GYRO_FS;
-}
+    if (samples == 0U) {
+        return HAL_ERROR;
+    }
 
-/* CALIBRATION (unchanged) */
-void MPU6050_CalibrateBlocking(I2C_HandleTypeDef *hi2c, MPU6050_Offsets *offsets, uint16_t samples) {
-    MPU6050_RawData raw;
-    MPU6050_ScaledData scaled;
-
-    float acc_sum[3] = {0}, gyro_sum[3] = {0};
-
-    for (uint16_t i = 0; i < samples; i++) {
-        uint8_t buf[14];
-
-        if (HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, REG_ACCEL_XOUT_H, 1, buf, 14, 10) == HAL_OK) {
-            MPU6050_ParseBuffer(buf, &raw);
-            MPU6050_ConvertToScaled(&raw, &scaled);
-
-            acc_sum[0] += scaled.ax;
-            acc_sum[1] += scaled.ay;
-            acc_sum[2] += scaled.az;
-
-            gyro_sum[0] += scaled.gx;
-            gyro_sum[1] += scaled.gy;
-            gyro_sum[2] += scaled.gz;
+    for (uint16_t i = 0U; i < samples; i++) {
+        if (mpu6050_read_accel(hi2c, &accel) != HAL_OK || mpu6050_read_gyro(hi2c, &gyro) != HAL_OK) {
+            return HAL_ERROR;
         }
 
-        HAL_Delay(2);
+        ax += accel.x;
+        ay += accel.y;
+        az += accel.z;
+        gx += gyro.x;
+        gy += gyro.y;
+        gz += gyro.z;
     }
 
-    offsets->accel_offset[0] = acc_sum[0] / samples;
-    offsets->accel_offset[1] = acc_sum[1] / samples;
-    offsets->accel_offset[2] = acc_sum[2] / samples;
-
-    offsets->gyro_offset[0] = gyro_sum[0] / samples;
-    offsets->gyro_offset[1] = gyro_sum[1] / samples;
-    offsets->gyro_offset[2] = gyro_sum[2] / samples;
+    g_offsets.accel.x = ax / (float)samples;
+    g_offsets.accel.y = ay / (float)samples;
+    g_offsets.accel.z = (az / (float)samples) - 1.0f;
+    g_offsets.gyro.x = gx / (float)samples;
+    g_offsets.gyro.y = gy / (float)samples;
+    g_offsets.gyro.z = gz / (float)samples;
+    return HAL_OK;
 }
 
-/* CALLBACKS */
-void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
-    if (hi2c->Instance == I2C2) {
-        MPU6050_ParseBuffer(rx_buffer, &mpu_latest_raw);
-        mpu_data_ready = 1;
-    }
-}
-
-void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
-    if (hi2c->Instance == I2C2) {
-        i2c_error_flag = 1;
+void mpu6050_get_offsets(mpu6050_offsets_t *offsets_out) {
+    if (offsets_out != NULL) {
+        *offsets_out = g_offsets;
     }
 }

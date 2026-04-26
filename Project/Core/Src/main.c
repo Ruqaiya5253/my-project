@@ -22,12 +22,12 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "mpu6050.h"
-#include "stdarg.h"  
-#include "stdio.h"   
-#include "stm32f3xx_hal.h"
-#include <strings.h>
+#include "complementary.h"
+#include "pid.h"
+#include "motor.h"
+#include "encoder.h"
 #include <string.h>
-#include <math.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,13 +37,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-/* Sensor data */
-MPU6050_Offsets offsets;
-float tilt_angle = 0.0f;
-volatile uint8_t control_loop_flag = 0;
-/* Timing */
-uint32_t last_tick = 0;
+#define CONTROL_LOOP_HZ 300.0f
+#define CONTROL_DT (1.0f / CONTROL_LOOP_HZ)
+#define TELEMETRY_DIVIDER 10U
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,7 +61,12 @@ UART_HandleTypeDef huart2;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-
+volatile uint8_t telemetry_flag = 0;
+volatile float g_angle_deg = 0.0f;
+volatile float g_gyro_dps = 0.0f;
+volatile int16_t g_motor_cmd = 0;
+volatile uint32_t g_control_ticks = 0U;
+volatile uint8_t g_uart_busy = 0U;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,38 +80,101 @@ static void MX_TIM6_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
-
+static void start_robot_modules(void);
+static void send_telemetry_nonblocking(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+static char uart_tx_buf[128];
 
-void myPrintf(const char* fmt, ...) 
-  {
-    char buffer[512];
+static void start_robot_modules(void) {
+    pid_gains_t gains = {
+        .kp = 55.0f,
+        .ki = 1.2f,
+        .kd = 2.8f,
+        .integral_limit = 60.0f,
+        .output_limit = (float)MOTOR_PWM_MAX,
+    };
 
-    // Step 2: Initialize the variadic argument list.
-    va_list args;
-    va_start(args, fmt);
-
-    // Step 3: Format the final string using vsnprintf.
-    // vsnprintf is "v" (takes a va_list) and "n" (prevents buffer overflow).
-    int length = vsnprintf(buffer, sizeof(buffer), fmt, args);
-
-    // Clean up the variadic argument list
-    va_end(args);
-
-    // Step 4: Transmit the string over UART using HAL_UART_Transmit.
-    // We cast buffer to (uint8_t*) as required by the HAL library.
-    if (length > 0) {
-        HAL_UART_Transmit(&huart2, (uint8_t*)buffer, (uint16_t)length, HAL_MAX_DELAY);
+    if (mpu6050_init(&hi2c2) != HAL_OK) {
+        Error_Handler();
     }
-  };
 
+    if (mpu6050_calibrate(&hi2c2, 300U) != HAL_OK) {
+        Error_Handler();
+    }
+
+    if (angle_init(&hi2c2) != HAL_OK) {
+        Error_Handler();
+    }
+
+    pid_init(gains);
+    encoder_init(&htim2);
+    motor_init(&htim2);
+
+    if (HAL_TIM_Base_Start_IT(&htim6) != HAL_OK) {
+        Error_Handler();
+    }
+}
+
+static void send_telemetry_nonblocking(void) {
+    int len;
+    encoder_data_t left;
+    encoder_data_t right;
+
+    if (g_uart_busy) {
+        return;
+    }
+
+    left = encoder_get_left_data();
+    right = encoder_get_right_data();
+    len = snprintf(uart_tx_buf, sizeof(uart_tx_buf), "%.3f,%.3f,%d,%.2f,%.2f\r\n", g_angle_deg, g_gyro_dps,
+                   g_motor_cmd, left.frequency_hz, right.frequency_hz);
+
+    if (len <= 0) {
+        return;
+    }
+    if (len > (int)sizeof(uart_tx_buf)) {
+        len = (int)sizeof(uart_tx_buf);
+    }
+
+    g_uart_busy = 1U;
+    if (HAL_UART_Transmit_IT(&huart2, (uint8_t *)uart_tx_buf, (uint16_t)len) != HAL_OK) {
+        g_uart_busy = 0U;
+    }
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART2) {
+        g_uart_busy = 0U;
+    }
+}
+
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) { encoder_handle_ic_callback(htim); }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM6) {
-        control_loop_flag = 1;
+    float command;
+
+    if (htim->Instance != TIM6) {
+        return;
+    }
+
+    if (angle_update(CONTROL_DT) != HAL_OK) {
+        return;
+    }
+
+    g_angle_deg = angle_get_deg();
+    g_gyro_dps = angle_get_gyro_rate_dps();
+    command = pid_compute(0.0f, g_angle_deg, CONTROL_DT);
+    g_motor_cmd = (int16_t)command;
+
+    motor_set_speed(MOTOR_LEFT, g_motor_cmd);
+    motor_set_speed(MOTOR_RIGHT, g_motor_cmd);
+
+    g_control_ticks++;
+    if ((g_control_ticks % TELEMETRY_DIVIDER) == 0U) {
+        telemetry_flag = 1U;
     }
 }
 
@@ -153,16 +217,7 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
-    HAL_Delay(20);
-      // 1. Init sensor
-    if (MPU6050_Init(&hi2c2) != HAL_OK) Error_Handler();
-    HAL_Delay(100);
-    // 2. Calibrate offsets (robot must be stationary & flat)
-    MPU6050_CalibrateBlocking(&hi2c2, &offsets, 20);
-    HAL_Delay(100);
-    // 3. Start 200 Hz control timer
-    HAL_TIM_Base_Start_IT(&htim6);
-
+  start_robot_modules();
 
   /* USER CODE END 2 */
 
@@ -170,68 +225,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* --- Handle I2C errors safely outside ISR --- */
-    if (i2c_error_flag) {
-        i2c_error_flag = 0;
-        HAL_I2C_DeInit(&hi2c2);
-        HAL_I2C_Init(&hi2c2);
+    if (telemetry_flag) {
+      telemetry_flag = 0U;
+      send_telemetry_nonblocking();
     }
-
-    /* --- Control loop triggered by timer --- */
-    if (control_loop_flag) {
-        control_loop_flag = 0;
-
-        /* Start next I2C read (non-blocking) */
-        MPU6050_ReadAsync_Start(&hi2c2);
-
-        /* Process previous data if ready */
-        if (mpu_data_ready) {
-
-            MPU6050_RawData local_raw;
-
-            /* --- CRITICAL: atomic copy --- */
-            __disable_irq();
-            local_raw = mpu_latest_raw;
-            mpu_data_ready = 0;
-            __enable_irq();
-
-            /* Convert */
-            MPU6050_ScaledData sensor;
-            MPU6050_ConvertToScaled(&local_raw, &sensor);
-
-            /* Apply offsets */
-            float ay = sensor.ay - offsets.accel_offset[1];
-            float az = sensor.az - offsets.accel_offset[2];
-            float gx = sensor.gx - offsets.gyro_offset[0];
-
-            /* --- REAL dt (not hardcoded) --- */
-            uint32_t now = HAL_GetTick();
-            float dt = (now - last_tick) / 1000.0f;
-            last_tick = now;
-
-            /* Prevent bad dt */
-            if (dt <= 0.0f || dt > 0.1f) dt = 0.005f;
-
-            /* Accelerometer angle */
-            float acc_angle = atan2f(ay, az) * 57.2958f;
-
-            /* Complementary filter */
-            tilt_angle = 0.98f * (tilt_angle + gx * dt)
-                       + 0.02f * acc_angle;
-
-            /* --- PID (optional) --- */
-            // float output = PID_Compute(0.0f, tilt_angle, dt);
-            // Motor_SetSpeed(output, output);
-
-            /* Debug every ~100 ms */
-            static uint8_t print_cnt = 0;
-            if (++print_cnt >= 20) {
-                print_cnt = 0;
-                myPrintf("AY: %0.2f | AZ: %0.2f | Tilt: %.2f\r\n", ay, az, tilt_angle);
-            }
-        }
-    }
-
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
   }
