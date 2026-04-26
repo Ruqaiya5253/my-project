@@ -37,7 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define CONTROL_LOOP_HZ 300.0f
+#define CONTROL_LOOP_HZ 200.0f
 #define CONTROL_DT (1.0f / CONTROL_LOOP_HZ)
 #define TELEMETRY_DIVIDER 10U
 /* USER CODE END PD */
