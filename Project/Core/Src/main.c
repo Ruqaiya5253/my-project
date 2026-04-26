@@ -28,6 +28,7 @@
 #include "encoder.h"
 #include <string.h>
 #include <stdio.h>
+#include "stdarg.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -61,7 +62,7 @@ UART_HandleTypeDef huart2;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
-volatile uint8_t telemetry_flag = 0;
+volatile uint8_t telemetry_flag = 1;
 volatile float g_angle_deg = 0.0f;
 volatile float g_gyro_dps = 0.0f;
 volatile int16_t g_motor_cmd = 0;
@@ -86,7 +87,29 @@ static void send_telemetry_nonblocking(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static char uart_tx_buf[128];
+  int myPrintf(const char* fmt, ...) 
+  {
+    char buffer[512];
+
+    // Step 2: Initialize the variadic argument list.
+    va_list args;
+    va_start(args, fmt);
+
+    // Step 3: Format the final string using vsnprintf.
+    // vsnprintf is "v" (takes a va_list) and "n" (prevents buffer overflow).
+    int length = vsnprintf(buffer, sizeof(buffer), fmt, args);
+
+    // Clean up the variadic argument list
+    va_end(args);
+
+    // Step 4: Transmit the string over UART using HAL_UART_Transmit.
+    // We cast buffer to (uint8_t*) as required by the HAL library.
+    if (length > 0) {
+        HAL_UART_Transmit(&huart2, (uint8_t*)buffer, (uint16_t)length, HAL_MAX_DELAY);
+        return 1;
+    }
+    return 0;
+  };
 
 static void start_robot_modules(void) {
     pid_gains_t gains = {
@@ -119,7 +142,6 @@ static void start_robot_modules(void) {
 }
 
 static void send_telemetry_nonblocking(void) {
-    int len;
     encoder_data_t left;
     encoder_data_t right;
 
@@ -129,18 +151,11 @@ static void send_telemetry_nonblocking(void) {
 
     left = encoder_get_left_data();
     right = encoder_get_right_data();
-    len = snprintf(uart_tx_buf, sizeof(uart_tx_buf), "%.3f,%.3f,%d,%.2f,%.2f\r\n", g_angle_deg, g_gyro_dps,
+    myPrintf("%.3f,%.3f,%d,%.2f,%.2f\r\n", g_angle_deg, g_gyro_dps,
                    g_motor_cmd, left.frequency_hz, right.frequency_hz);
-
-    if (len <= 0) {
-        return;
-    }
-    if (len > (int)sizeof(uart_tx_buf)) {
-        len = (int)sizeof(uart_tx_buf);
-    }
-
     g_uart_busy = 1U;
-    if (HAL_UART_Transmit_IT(&huart2, (uint8_t *)uart_tx_buf, (uint16_t)len) != HAL_OK) {
+    if (myPrintf("%.3f,%.3f,%d,%.2f,%.2f\r\n", g_angle_deg, g_gyro_dps,
+                   g_motor_cmd, left.frequency_hz, right.frequency_hz)) {
         g_uart_busy = 0U;
     }
 }
@@ -177,6 +192,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
         telemetry_flag = 1U;
     }
 }
+
 
 /* USER CODE END 0 */
 
@@ -225,6 +241,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    HAL_Delay(100);
+    myPrintf("I was here \r\n");
     if (telemetry_flag) {
       telemetry_flag = 0U;
       send_telemetry_nonblocking();
