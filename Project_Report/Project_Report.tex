@@ -15,7 +15,7 @@
 \usepackage{tikz}
 \usepackage{caption}
 \usepackage{subcaption}
-
+\usetikzlibrary{positioning}
 % ----- code listing style -----
 \definecolor{codebg}{rgb}{0.95,0.95,0.95}
 \lstset{
@@ -964,11 +964,24 @@
 		\subsection{Project Architecture Overview}
 		\begin{figure}[h]
 			\centering
-			\begin{verbatim}
-				[MPU6050] --I2C--> [complementary filter] --> [PID controller] --> [motor driver] --> motors
-				|
-				[encoder] -- input capture
-			\end{verbatim}
+			\begin{tikzpicture}[node distance=1.8cm, every node/.style={draw, rectangle, align=center}]
+				
+				\node (mpu) {MPU6050};
+				\node (filter) [below of=mpu] {Complementary\\Filter};
+				\node (pid) [below of=filter] {PID Controller};
+				\node (driver) [below of=pid] {Motor Driver};
+				\node (motor) [below of=driver] {Motors};
+				
+				\node (encoder) [right=4cm of pid] {Encoder};
+				
+				\draw[->] (mpu) -- node[right=0.5cm]{I2C} (filter);
+				\draw[->] (filter) -- (pid);
+				\draw[->] (pid) -- (driver);
+				\draw[->] (driver) -- (motor);
+				
+				\draw[->] (encoder) -- (pid);
+				
+			\end{tikzpicture}
 			\caption{Data flow}
 		\end{figure}
 		

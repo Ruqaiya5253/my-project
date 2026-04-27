@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999998 (MiKTeX 26.2) (preloaded format=xelatex 2026.4.23)  27 APR 2026 20:37
+This is XeTeX, Version 3.141592653-2.6-0.999998 (MiKTeX 26.2) (preloaded format=xelatex 2026.4.23)  27 APR 2026 20:47
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -743,7 +743,10 @@ Package caption Info: New subtype `subfigure' on input line 238.
 Package caption Info: New subtype `subtable' on input line 238.
 \c@subtable=\count368
 )
-(D:\Programs\MiKTeX\tex/latex/listings\lstlang1.sty
+(D:\Programs\MiKTeX\tex/generic/pgf/frontendlayer/tikz/libraries\tikzlibrarypos
+itioning.code.tex
+File: tikzlibrarypositioning.code.tex 2025-08-29 v3.1.11a (3.1.11a)
+) (D:\Programs\MiKTeX\tex/latex/listings\lstlang1.sty
 File: lstlang1.sty 2025/11/14 1.11b listings language file
 )
 (D:\Programs\MiKTeX\tex/latex/listings\lstmisc.sty
@@ -1116,11 +1119,6 @@ Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 [24]
-Overfull \hbox (137.54918pt too wide) in paragraph at lines 971--971
-[]    \T1/lmtt/m/n/12 [MPU6050] --I2C--> [complementary filter] --> [PID contro
-ller] --> [motor driver] --> motors[] 
- []
-
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
@@ -1143,16 +1141,15 @@ Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 [28]
 Missing character: There is no ‑ in font ec-lmtt10!
-[29]
+[29] [30]
 Missing character: There is no ‑ in font ec-lmr12!
-[30]
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
 
-Overfull \hbox (3.49107pt too wide) in paragraph at lines 1242--1243
+Overfull \hbox (3.49107pt too wide) in paragraph at lines 1255--1256
 \T1/lmr/m/n/12 Input cap-ture in-ter-rupts are en-abled, and the HAL will call 
 \T1/lmtt/m/n/12 HAL_TIM_IC_CaptureCallback
  []
@@ -1162,14 +1159,13 @@ Missing character: There is no ’ in font ec-lmr12!
 [32]
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
-
-Overfull \hbox (40.38876pt too wide) in paragraph at lines 1333--1334
+[33]
+Overfull \hbox (40.38876pt too wide) in paragraph at lines 1346--1347
 \T1/lmr/m/n/12 The main loop (in \T1/lmtt/m/n/12 while(1)\T1/lmr/m/n/12 ) check
 s \T1/lmtt/m/n/12 telemetry_flag \T1/lmr/m/n/12 and calls \T1/lmtt/m/n/12 send_
 telemetry_nonblocking()\T1/lmr/m/n/12 .
  []
 
-[33]
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no – in font ec-lmr12!
@@ -1193,10 +1189,10 @@ Package rerunfilecheck Info: File `Project_Report.out' has not changed.
 (rerunfilecheck)             Checksum: 0E9394A9C755186211999B842FF0BACD;12117.
  ) 
 Here is how much of TeX's memory you used:
- 27776 strings out of 402983
- 551691 string characters out of 5453864
- 1287914 words of memory out of 5000000
- 56133 multiletter control sequences out of 15000+600000
+ 27918 strings out of 402983
+ 554870 string characters out of 5453864
+ 1296849 words of memory out of 5000000
+ 56272 multiletter control sequences out of 15000+600000
  692803 words of font info for 82 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  102i,10n,107p,531b,2354s stack positions out of 10000i,1000n,20000p,200000b,200000s
