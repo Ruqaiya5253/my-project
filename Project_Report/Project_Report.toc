@@ -1,31 +1,67 @@
 \contentsline {section}{\numberline {1}Introduction}{3}{section.1}%
 \contentsline {section}{\numberline {2}Project Overview}{3}{section.2}%
-\contentsline {section}{\numberline {3}Hardware Setup and Pin Configuration}{4}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Microcontroller and Shield}{4}{subsection.3.1}%
+\contentsline {section}{\numberline {3}Hardware Setup and Pin Configuration}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Microcontroller and Shield}{3}{subsection.3.1}%
 \contentsline {subsection}{\numberline {3.2}Pin Mapping}{4}{subsection.3.2}%
 \contentsline {subsection}{\numberline {3.3}Timer and Peripheral Configuration}{4}{subsection.3.3}%
 \contentsline {section}{\numberline {4}System Architecture and Control Loop}{5}{section.4}%
 \contentsline {subsection}{\numberline {4.1}Angle Estimation -- Complementary Filter}{5}{subsection.4.1}%
-\contentsline {subsection}{\numberline {4.2}PID Controller}{5}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.2}PID Controller}{6}{subsection.4.2}%
 \contentsline {subsection}{\numberline {4.3}Motor Driver}{6}{subsection.4.3}%
 \contentsline {subsection}{\numberline {4.4}Encoder Monitoring}{6}{subsection.4.4}%
 \contentsline {subsection}{\numberline {4.5}Telemetry}{6}{subsection.4.5}%
 \contentsline {section}{\numberline {5}Detailed Code Explanation}{6}{section.5}%
-\contentsline {subsection}{\numberline {5.1}File: \texttt {mpu6050.c} \& \texttt {mpu6050.h}}{6}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.1}File: \texttt {mpu6050.c} \& \texttt {mpu6050.h}}{7}{subsection.5.1}%
 \contentsline {subsection}{\numberline {5.2}File: \texttt {complementary.c} \& \texttt {complementary.h}}{9}{subsection.5.2}%
 \contentsline {subsection}{\numberline {5.3}File: \texttt {pid.c} \& \texttt {pid.h}}{10}{subsection.5.3}%
-\contentsline {subsection}{\numberline {5.4}File: \texttt {motor.c} \& \texttt {motor.h}}{11}{subsection.5.4}%
-\contentsline {subsection}{\numberline {5.5}File: \texttt {encoder.c} \& \texttt {encoder.h}}{12}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.4}File: \texttt {motor.c} \& \texttt {motor.h}}{12}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}File: \texttt {encoder.c} \& \texttt {encoder.h}}{13}{subsection.5.5}%
 \contentsline {subsection}{\numberline {5.6}File: \texttt {main.c}}{14}{subsection.5.6}%
 \contentsline {section}{\numberline {6}Extra Features Beyond Lab 11 Requirements}{17}{section.6}%
 \contentsline {subsection}{\numberline {6.1}Encoder‑Based Wheel Speed Measurement}{17}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Comprehensive Telemetry Stream}{17}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.2}Comprehensive Telemetry Stream}{18}{subsection.6.2}%
 \contentsline {subsection}{\numberline {6.3}Non‑Blocking Telemetry Infrastructure}{18}{subsection.6.3}%
 \contentsline {subsection}{\numberline {6.4}Custom \texttt {printf} Function \texttt {myPrintf}}{18}{subsection.6.4}%
 \contentsline {subsection}{\numberline {6.5}MPU‑6050 Calibration Routine}{18}{subsection.6.5}%
 \contentsline {subsection}{\numberline {6.6}Modular, Reusable Driver Architecture}{18}{subsection.6.6}%
-\contentsline {subsection}{\numberline {6.7}Fixed‑Rate Control Loop in a Timer ISR}{18}{subsection.6.7}%
+\contentsline {subsection}{\numberline {6.7}Fixed‑Rate Control Loop in a Timer ISR}{19}{subsection.6.7}%
 \contentsline {subsection}{\numberline {6.8}Atomic Encoder Data Reads}{19}{subsection.6.8}%
 \contentsline {subsection}{\numberline {6.9}Architecture Ready for Differential Steering}{19}{subsection.6.9}%
-\contentsline {subsection}{\numberline {6.10}Heartbeat Message for Liveness Monitoring}{19}{subsection.6.10}%
 \contentsline {section}{\numberline {7}Conclusion}{19}{section.7}%
+\contentsline {section}{\numberline {8}Evaluation Questions: PID Controller for Self-Balancing Robot}{21}{section.8}%
+\contentsline {section}{\numberline {9}Code Explanation And Overview}{25}{section.9}%
+\contentsline {subsection}{\numberline {9.1}Project Architecture Overview}{25}{subsection.9.1}%
+\contentsline {subsection}{\numberline {9.2}MPU6050 Driver (\texttt {mpu6050.c/h})}{25}{subsection.9.2}%
+\contentsline {subsubsection}{\numberline {9.2.1}Header File (\texttt {mpu6050.h})}{25}{subsubsection.9.2.1}%
+\contentsline {subsection}{\numberline {9.3}Source Code (\texttt {mpu6050.c})}{26}{subsection.9.3}%
+\contentsline {subsubsection}{\numberline {9.3.1}Internal Helpers}{26}{subsubsection.9.3.1}%
+\contentsline {subsubsection}{\numberline {9.3.2}Initialisation: \texttt {mpu6050\_init()}}{26}{subsubsection.9.3.2}%
+\contentsline {subsubsection}{\numberline {9.3.3}Reading Sensor Data}{26}{subsubsection.9.3.3}%
+\contentsline {subsubsection}{\numberline {9.3.4}Calibration}{27}{subsubsection.9.3.4}%
+\contentsline {subsubsection}{\numberline {9.3.5}Key Takeaways}{27}{subsubsection.9.3.5}%
+\contentsline {subsection}{\numberline {9.4}Complementary Filter (\texttt {complementary.c/h})}{27}{subsection.9.4}%
+\contentsline {subsubsection}{\numberline {9.4.1}Theory}{27}{subsubsection.9.4.1}%
+\contentsline {subsubsection}{\numberline {9.4.2}Code}{27}{subsubsection.9.4.2}%
+\contentsline {subsubsection}{\numberline {9.4.3}Public Interface}{28}{subsubsection.9.4.3}%
+\contentsline {subsection}{\numberline {9.5}PID Controller (\texttt {pid.c/h})}{28}{subsection.9.5}%
+\contentsline {subsubsection}{\numberline {9.5.1}What is PID?}{28}{subsubsection.9.5.1}%
+\contentsline {subsubsection}{\numberline {9.5.2}Header}{28}{subsubsection.9.5.2}%
+\contentsline {subsubsection}{\numberline {9.5.3}Implementation}{29}{subsubsection.9.5.3}%
+\contentsline {subsubsection}{\numberline {9.5.4}Gains Used in the Project}{29}{subsubsection.9.5.4}%
+\contentsline {subsection}{\numberline {9.6}Motor Driver (\texttt {motor.c/h})}{29}{subsection.9.6}%
+\contentsline {subsubsection}{\numberline {9.6.1}Header}{29}{subsubsection.9.6.1}%
+\contentsline {subsubsection}{\numberline {9.6.2}Implementation}{30}{subsubsection.9.6.2}%
+\contentsline {subsection}{\numberline {9.7}Encoder Driver (\texttt {encoder.c/h})}{31}{subsection.9.7}%
+\contentsline {subsubsection}{\numberline {9.7.1}Purpose}{31}{subsubsection.9.7.1}%
+\contentsline {subsubsection}{\numberline {9.7.2}Header}{31}{subsubsection.9.7.2}%
+\contentsline {subsubsection}{\numberline {9.7.3}Initialisation}{31}{subsubsection.9.7.3}%
+\contentsline {subsubsection}{\numberline {9.7.4}Interrupt Callback}{31}{subsubsection.9.7.4}%
+\contentsline {paragraph}{Frequency calculation}{32}{section*.42}%
+\contentsline {subsubsection}{\numberline {9.7.5}Reading Data}{32}{subsubsection.9.7.5}%
+\contentsline {subsection}{\numberline {9.8}Main Application (\texttt {main.c})}{32}{subsection.9.8}%
+\contentsline {subsubsection}{\numberline {9.8.1}Configuration and Global Variables}{32}{subsubsection.9.8.1}%
+\contentsline {subsubsection}{\numberline {9.8.2}System Initialisation: \texttt {start\_robot\_modules()}}{32}{subsubsection.9.8.2}%
+\contentsline {subsection}{\numberline {9.9}The Control Loop (TIM6 Interrupt)}{33}{subsection.9.9}%
+\contentsline {subsubsection}{\numberline {9.9.1}Telemetry}{33}{subsubsection.9.9.1}%
+\contentsline {subsubsection}{\numberline {9.9.2}Additional Interrupt Service Routines}{34}{subsubsection.9.9.2}%
+\contentsline {subsection}{\numberline {9.10}Summary}{34}{subsection.9.10}%

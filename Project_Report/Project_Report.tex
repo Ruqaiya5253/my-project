@@ -62,14 +62,10 @@
 	\section{Introduction}
 	\label{sec:intro}
 	% ================================================================
-	
-	This document explains, in painstaking detail, every module and every significant line of code that powers a two‑wheeled self‑balancing robot.  
 	The robot is built around an \textbf{STM32F3Discovery} board (STM32F303VCT6, clocked at \SI{48}{\mega\hertz}) and the \textbf{Keyestudio Self‑Balancing Car Kit V3}.  
 	The firmware reads an MPU‑6050 inertial measurement unit, fuses the sensor data to obtain a stable tilt angle, runs a PID controller 200 times per second, and drives two DC motors to keep the robot upright.
 	
-	Because the project is meant to be studied and questioned in a viva‑voce examination, this report leaves nothing to guesswork.  
 	It starts from the hardware wires and timers, moves through every C source file, and finishes with a discussion of creative features that go beyond the strict requirements of \textbf{Lab 11} (Open‑Ended Lab).  
-	Even if you have never written a line of embedded C before, you should be able to follow the explanations, and after reading you will be equipped to answer detailed questions about the code.
 	
 	\bigskip
 	\noindent\textbf{How to use this document:}
@@ -113,6 +109,31 @@
 	Table~\ref{tab:pins} lists every connection between the Discovery board and the shield.  
 	\textbf{Common ground is essential:} the STM32 ground must be tied to the shield’s GND.
 	
+	\begin{table}[htbp]
+		\centering
+		\caption{Complete pin mapping -- verified against firmware \texttt{motor.c}, \texttt{encoder.c}, and shield schematic.}
+		\label{tab:pins}
+		\begin{tabular}{@{}llll@{}}
+			\toprule
+			\textbf{STM32} & \textbf{Shield Pin} & \textbf{Function} & \textbf{Description} \\
+			\midrule
+			PA15  & D4 (pin~8)  & R\_m encoder input & TIM2\_CH1 input capture, measures R\_wheel speed. \\
+			PA1  & D5 (pin~9)  & L\_m encoder input  & TIM2\_CH2 input capture, measures L\_wheel speed. \\
+			PB10 & D9 (pin~4)  & L\_m PWM output       & TIM2\_CH3 PWM signal for L\_m speed control. \\
+			PB11 & D10 (pin~3) & R\_m PWM output      & TIM2\_CH4 PWM signal for R\_m speed control. \\
+			PD8  & D8 (pin~5)  & R\_m direction B     & GPIO output (IN2) \\
+			PD9  & D12 (pin~2) & R\_m direction A     & GPIO output (IN1) \\
+			PD10 & D7 (pin~6)  & L\_m direction A      & GPIO output (IN1)\\
+			PD11 & D6 (pin~7)  & L\_m direction B      & GPIO output (IN2)\\
+			PA9  & SCL & I²C clock for IMU          & I2C2 serial clock line to MPU‑6050. \\
+			PA10 & SDA & I²C data for IMU           & I2C2 serial data line to MPU‑6050. \\
+			PA2  & TX & UART transmit    & USART2 TX pin\\
+			PA3  & RX  & UART receive     & USART2 RX pin\\
+			\bottomrule
+		\end{tabular}
+		\vspace{0.5em}
+	\end{table}
+	
 	\begin{table}[H]
 		\centering
 		\caption{Complete pin mapping -- verified against firmware \file{motor.h}, \file{encoder.c}, and \file{main.c}}
@@ -121,7 +142,7 @@
 			\toprule
 			\textbf{STM32 Pin} & \textbf{Shield Function} & \textbf{Description} \\
 			\midrule
-			PA0  & TIM2\_CH1 & Right motor encoder input (Input Capture) \\
+			PA15  & TIM2\_CH1 & Right motor encoder input (Input Capture) \\
 			PA1  & TIM2\_CH2 & Left motor encoder input (Input Capture) \\
 			PB10 & TIM2\_CH3 & Left motor PWM output \\
 			PB11 & TIM2\_CH4 & Right motor PWM output \\
@@ -734,10 +755,6 @@
 	\textbf{What we did:} Although the current controller applies the same command to both motors, the motor driver supports independent left/right commands, and the encoder module provides separate speed measurements.  
 	\textbf{Why it’s valuable:} A natural next step is to implement a turning controller that sends different commands to each wheel. The existing code needs no structural changes to support this; only the PID logic in the ISR would be extended.
 	
-	\subsection{Heartbeat Message for Liveness Monitoring}
-	\textbf{What we did:} The main loop prints \texttt{"I was here"} every 100\,ms.  
-	\textbf{Why it’s useful:} When the robot is not connected to a debugger, the heartbeat on a serial terminal is the only way to know that the firmware is still running. If the message stops, the program has likely crashed or hung, prompting investigation.
-	
 	% ================================================================
 	\section{Conclusion}
 	\label{sec:conclusion}
@@ -748,6 +765,600 @@
 	By examining each file line‑by‑line, we have covered the low‑level I²C communication, timer configuration for PWM and input capture, sensor calibration, the complementary filter equation, PID tuning and anti‑windup, motor direction control, UART telemetry, and real‑time system design.
 	
 	The project also introduces several creative extensions beyond the mandatory lab requirements: encoder‑based wheel speed monitoring, a rich telemetry stream, a non‑blocking transmission framework, a custom \texttt{printf} utility, automatic sensor calibration, modular architecture, atomic data access, and a heartbeat message. These additions demonstrate a deeper understanding of embedded systems and provide a solid foundation for further enhancements.
+	
+	% ================================================================
+	\newpage
+	\section{Evaluation Questions: PID Controller for Self-Balancing Robot}
+	% ================================================================
+	The answers below refer to the PID implementation found in \texttt{pid.c}, the 
+	complementary filter in \texttt{complementary.c}, and the control loop in 
+	\texttt{main.c}. The controller uses a fixed sampling time 
+	$\text{CONTROL\_DT} = 5\,\text{ms}$ (200\,Hz) and the setpoint is $0^\circ$ 
+	(upright position). Gains are $K_p=55.0$, $K_i=1.2$, $K_d=2.8$ with an 
+	integral limit of $\pm 60.0$ and output limit of $\pm\text{MOTOR\_PWM\_MAX}$.
+	
+	\begin{enumerate}[leftmargin=*, label=\textbf{Q\arabic*}]
+		
+		\item \textbf{What role does each PID term play in the controller's response?}
+		
+		\begin{itemize}
+			\item \textbf{Proportional (P):} The P term produces a control effort 
+			proportional to the current error $e(t) = \text{setpoint} - \text{angle}$. 
+			In the code, this is \texttt{s\_gains.kp * error}. It provides an immediate 
+			restoring torque that pushes the robot back toward vertical. If the robot 
+			tilts forward (positive angle, negative error), the motor command becomes 
+			negative (or positive, depending on sign convention) to counteract the tilt. 
+			A purely P controller would never reach exact zero because a non‑zero error 
+			is required to maintain a correcting force.
+			
+			\item \textbf{Integral (I):} The I term accumulates the error over time 
+			(\texttt{s\_integral += error * dt}) and multiplies it by $K_i$. Its purpose 
+			is to eliminate steady‑state offset – the small persistent tilt that a P‑only 
+			controller leaves uncorrected. In a balancing robot, the integral action 
+			compensates for constant disturbances such as a slightly off‑center battery 
+			pack or unbalanced cabling. The code clamps \texttt{s\_integral} to 
+			$\pm\texttt{integral\_limit}$ to prevent integral windup when the robot 
+			cannot physically recover (e.g., lying on its side).
+			
+			\item \textbf{Derivative (D):} The D term looks at the rate of change of 
+			error, \texttt{derivative = (error - s\_prev\_error) / dt}. It provides a 
+			damping force that opposes rapid motion. When the robot is falling, the 
+			error changes quickly; the derivative term produces a correction that 
+			reduces overshoot and oscillations. This helps the robot settle smoothly 
+			around the vertical position instead of oscillating back and forth. In the 
+			code, $K_d$ is set to 2.8, contributing a noticeable damping effect.
+		\end{itemize}
+		
+		In the PID formula implemented in \texttt{pid\_compute()}:
+		\[
+		\text{output} = K_p\,e(t) + K_i\int_0^t e(\tau)\,d\tau + K_d\,\frac{de(t)}{dt}.
+		\]
+		
+		\item \textbf{How does changing $K_p$, $K_i$, or $K_d$ affect system performance?}
+		
+		\begin{itemize}
+			\item \textbf{Increasing $K_p$:} Makes the robot stiffer – it reacts more 
+			aggressively to any tilt. This can reduce the steady‑state error and improve 
+			responsiveness. However, too high a $K_p$ leads to overshoot, high‑frequency 
+			oscillations, or even instability (the robot shakes violently and falls). 
+			In the given code, $K_p=55.0$ is already a relatively high gain suitable 
+			for a stiff balancing response.
+			
+			\item \textbf{Increasing $K_i$:} Faster elimination of steady‑state error. 
+			If the robot consistently drifts to one side, a larger $K_i$ will correct 
+			the drift more quickly. The downside is that the integral term can build up 
+			too much during prolonged error (e.g., if the robot is held down), leading 
+			to large, slow oscillations or a delayed over‑correction once the restraint 
+			is removed. The provided code mitigates this by clamping the integral term 
+			(\texttt{integral\_limit = 60.0}). Still, excessive $K_i$ can cause instability 
+			even within the clamping range.
+			
+			\item \textbf{Increasing $K_d$:} Adds more damping, smoothing the response 
+			and reducing overshoot. A well‑tuned $K_d$ allows a higher $K_p$ without 
+			oscillations. However, $K_d$ amplifies sensor noise (gyroscope noise is 
+			differentiated), which appears as jittery motor commands. If $K_d$ is too 
+			large, the motors may buzz or respond erratically. The complementary filter 
+			in \texttt{angle\_update()} already fuses accelerometer and gyroscope data 
+			to reduce noise, but too high a derivative gain can still inject high‑frequency 
+			vibration into the system.
+		\end{itemize}
+		
+		All gain changes interact: a balance must be found experimentally, guided by 
+		the real‑time telemetry (angle, gyro rate, motor command) transmitted via UART 
+		every \texttt{TELEMETRY\_DIVIDER} ticks (i.e., every 50\,ms).
+		
+		\item \textbf{What challenges did you face in initial tuning the controller? 
+			What will be your strategy for the final fine tuning of the controller?}
+		
+		\textbf{Challenges encountered during initial tuning:}
+		\begin{itemize}
+			\item \textbf{Finding a stable starting point:} With no prior knowledge of 
+			the system dynamics, even moderate gains caused immediate oscillation. 
+			Starting with $K_i=K_d=0$ and $K_p$ small allowed the robot to “wobble” 
+			without falling, providing a baseline.
+			\item \textbf{Integral windup during startup:} When the robot was placed on 
+			the floor tilted, the integrator quickly saturated, causing a violent 
+			correction once the robot was manually balanced. The \texttt{integral\_limit} 
+			was essential to prevent this.
+			\item \textbf{Noisy derivative action:} High‑frequency gyroscope noise, 
+			despite the complementary filter, made a large $K_d$ unusable. The telemetry 
+			plot of \texttt{g\_gyro\_dps} showed significant noise, limiting the useful 
+			derivative gain.
+			\item \textbf{Inconsistent loop timing:} The control computation runs inside 
+			TIM6 ISR every 5\,ms. Any extra delay (like heavy UART transmission) 
+			disturbs the dt used by the complementary filter and PID. Using a 
+			non‑blocking telemetry flag (\texttt{telemetry\_flag}) and a separate 
+			\texttt{send\_telemetry\_nonblocking()} helped maintain consistent timing.
+		\end{itemize}
+		
+		\textbf{Strategy for final fine‑tuning:}
+		\begin{itemize}
+			\item \textbf{Systematic approach:} Use the Ziegler–Nichols step‑response 
+			method or relay‑feedback method to obtain initial estimates of $K_u$ and 
+			$T_u$, then compute $K_p$, $K_i$, $K_d$ accordingly.
+			\item \textbf{Iterative refinement:}
+			\begin{enumerate}
+				\item With $K_i=K_d=0$, increase $K_p$ until the robot oscillates with 
+				constant amplitude (ultimate gain $K_u$). Note the oscillation period 
+				$T_u$.
+				\item Add derivative gain to damp the oscillations, reducing $K_p$ 
+				slightly if necessary.
+				\item Introduce a small integral gain to cancel any steady‑state offset, 
+				observing the telemetry for any slow oscillation (integral windup).
+				\item Adjust gains in steps of $\pm 20\%$ while observing the real‑time 
+				plot of angle and motor command.
+			\end{enumerate}
+			\item \textbf{Telemetry‑driven debugging:} The telemetry string 
+			\texttt{"\%0.3f,\%0.3f,\%d,\%0.2f,\%0.2f"} provides angle, gyro rate, 
+			motor command, and encoder frequencies. Plotting these in real time helps 
+			visualise overshoot, settling time, and noise.
+			\item \textbf{Motor encoder feedback:} The encoder data (left and right 
+			frequencies) can be used to implement an additional inner speed loop in 
+			future iterations, reducing the burden on the angle PID.
+			\item \textbf{Physical consistency:} Ensure the robot’s mechanical structure 
+			(battery placement, sensor alignment, wheel grip) is fixed before final 
+			tuning, so that the tuned gains remain valid.
+		\end{itemize}
+		
+		\item \textbf{What are the limitations of using a simple PID for real‑world 
+			systems?}
+		
+		Despite its widespread use, a simple PID controller has several intrinsic 
+		limitations when applied to real‑world systems, particularly to a self‑balancing 
+		robot:
+		
+		\begin{itemize}
+			\item \textbf{Linearity assumption:} PID assumes a linear relationship 
+			between control input and system response. The balancing robot involves 
+			nonlinear dynamics (e.g., torque vs. angle is $\sin\theta$, not $\theta$). 
+			A linear PID may perform poorly at large tilt angles or when the robot is 
+			far from upright.
+			
+			\item \textbf{Constant gains:} The fixed gains in the code are optimised 
+			for a specific operating point (vertical, small tilts). Changes in battery 
+			voltage, payload, or surface friction alter the system’s behaviour. A fixed 
+			PID cannot adapt; it would need manual retuning, which is impractical in 
+			dynamic environments.
+			
+			\item \textbf{Noise amplification:} The derivative term amplifies high‑frequency 
+			noise from the gyroscope, limiting the usable value of $K_d$. Despite the 
+			complementary filter, some noise still passes through, causing jitter in 
+			the motor command. In the code, $K_d=2.8$ is relatively small compared to 
+			$K_p$ precisely because of noise constraints.
+			
+			\item \textbf{Integral windup:} In many real‑world scenarios, the actuator 
+			saturates (motors reach maximum PWM) or the robot is prevented from moving. 
+			The integrator keeps accumulating error, leading to a large overshoot once 
+			the constraint is removed. The code implements a simple clamping strategy, 
+			but more sophisticated anti‑windup (back‑calculation, conditional 
+			integration) is often required for robust operation.
+			
+			\item \textbf{No feed‑forward:} A pure PID reacts only to error. It cannot 
+			anticipate known disturbances or incorporate a model of the system’s dynamics 
+			to improve response time. For example, if the robot is commanded to move 
+			forward while balancing, a feed‑forward term based on the desired 
+			acceleration would greatly improve performance.
+			
+			\item \textbf{Limited disturbance rejection:} While a PID can reject 
+			constant disturbances (integral action), it struggles with time‑varying or 
+			impulsive perturbations (a gentle push, a sudden slope). The robot may 
+			balance but cannot “ride” smoothly over uneven terrain without a more 
+			advanced control strategy (e.g., LQR, cascade control).
+			
+			\item \textbf{Tuning effort:} Simple PID requires manual tuning or empirical 
+			methods, which is time‑consuming and may not yield optimal performance. 
+			There is no guarantee that the hand‑tuned gains $K_p=55.0$, $K_i=1.2$, 
+			$K_d=2.8$ are globally optimal for all states of the robot.
+		\end{itemize}
+		
+		In summary, the simple PID implemented here provides a solid foundation for 
+		self‑balancing, but a real‑world product would likely benefit from a more 
+		advanced control architecture (e.g., state‑space LQR with Kalman filter) to 
+		handle nonlinearities, parameter variations, and noise more effectively.
+		
+	\end{enumerate}
+	
+	\newpage
+
+	\section{Code Explanation And Overview}
+		\subsection{Project Architecture Overview}
+		\begin{figure}[h]
+			\centering
+			\begin{verbatim}
+				[MPU6050] --I2C--> [complementary filter] --> [PID controller] --> [motor driver] --> motors
+				|
+				[encoder] -- input capture
+			\end{verbatim}
+			\caption{Data flow}
+		\end{figure}
+		
+		The \texttt{main()} function initialises everything, then a hardware timer (TIM6) ticks at 200 Hz. In the timer interrupt:
+		\begin{itemize}
+			\item MPU6050 is read,
+			\item angle is computed (complementary filter),
+			\item PID computes a motor command,
+			\item motors are set,
+			\item occasionally telemetry is sent over UART.
+		\end{itemize}
+		
+		Now let’s examine each module.
+		
+		\subsection{MPU6050 Driver (\texttt{mpu6050.c/h})}
+		This module talks to the MPU6050 inertial measurement unit (IMU) via I²C. The IMU contains a 3‑axis accelerometer and a 3‑axis gyroscope.
+		
+		\subsubsection{Header File (\texttt{mpu6050.h})}
+		Defines constants and type names.
+		
+		\begin{lstlisting}[caption={mpu6050.h (key parts)}]
+			#define MPU6050_ADDR (0x68U << 1)   // 7‑bit I2C address left‑shifted
+			#define MPU6050_ACCEL_SCALE 16384.0f // for ‑2g..+2g range
+			#define MPU6050_GYRO_SCALE  131.0f   // for ‑250..+250 dps
+			
+			typedef struct {
+				float x, y, z;
+			} mpu6050_axes_t;
+			
+			typedef struct {
+				mpu6050_axes_t accel;
+				mpu6050_axes_t gyro;
+			} mpu6050_offsets_t;
+			
+			// Public function prototypes
+			HAL_StatusTypeDef mpu6050_init(I2C_HandleTypeDef *hi2c);
+			HAL_StatusTypeDef mpu6050_read_accel(I2C_HandleTypeDef *hi2c, mpu6050_axes_t *accel_out);
+			HAL_StatusTypeDef mpu6050_read_gyro(I2C_HandleTypeDef *hi2c, mpu6050_axes_t *gyro_out);
+			HAL_StatusTypeDef mpu6050_calibrate(I2C_HandleTypeDef *hi2c, uint16_t samples);
+			void mpu6050_get_offsets(mpu6050_offsets_t *offsets_out);
+		\end{lstlisting}
+		
+		\textbf{Why shift the address?} I²C addresses are 7‑bit, but HAL functions expect an 8‑bit address with the read/write bit set by the library. So we shift left.
+		
+		\subsection{Source Code (\texttt{mpu6050.c})}
+		\subsubsection{Internal Helpers}
+		\begin{lstlisting}
+			static int16_t to_i16(uint8_t msb, uint8_t lsb) {
+				return (int16_t)((uint16_t)msb << 8U | (uint16_t)lsb);
+			}
+		\end{lstlisting}
+		The MPU6050 gives each axis as two 8‑bit registers (high byte, low byte). This function combines them into a signed 16‑bit integer.
+		
+		\subsubsection{Initialisation: \texttt{mpu6050\_init()}}
+		\begin{lstlisting}
+			uint8_t value = 0x00U;
+			// Wake up the chip (write 0 to power management register)
+			HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_PWR_MGMT_1, I2C_MEMADD_SIZE_8BIT, &value, 1U, 5);
+			// Set accelerometer range to ‑2g (write 0 to config register)
+			HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_ACCEL_CONFIG, I2C_MEMADD_SIZE_8BIT, &value, 1U, 5);
+			// Set gyroscope range to ‑250 deg/s
+			HAL_I2C_Mem_Write(hi2c, MPU6050_ADDR, REG_GYRO_CONFIG, I2C_MEMADD_SIZE_8BIT, &value, 1U, 5);
+		\end{lstlisting}
+		Writing 0 to these registers puts the sensor in a known, default state (awake, standard ranges). The function \texttt{HAL\_I2C\_Mem\_Write} sends data to a specific register of the slave device.
+		
+		\subsubsection{Reading Sensor Data}
+		Both \texttt{mpu6050\_read\_accel} and \texttt{mpu6050\_read\_gyro} follow the same pattern:
+		\begin{lstlisting}
+			uint8_t buf[6];
+			HAL_I2C_Mem_Read(hi2c, MPU6050_ADDR, REG_ACCEL_XOUT_H, I2C_MEMADD_SIZE_8BIT, buf, 6, 5);
+			// Each axis: high byte then low byte
+			accel_out->x = (float)to_i16(buf[0], buf[1]) / MPU6050_ACCEL_SCALE;
+			accel_out->y = (float)to_i16(buf[2], buf[3]) / MPU6050_ACCEL_SCALE;
+			accel_out->z = (float)to_i16(buf[4], buf[5]) / MPU6050_ACCEL_SCALE;
+			// Subtract stored offset (calibration result)
+			accel_out->x -= g_offsets.accel.x;
+			// ... same for y,z
+		\end{lstlisting}
+		The raw signed 16‑bit numbers are converted to physical units by dividing by the scale factor. Then offsets obtained during calibration are removed.
+		
+		\subsubsection{Calibration}
+		\texttt{mpu6050\_calibrate()} takes a number of samples while the sensor is stationary. It averages the raw values and stores them as offsets. For accelerometer, it expects the Z axis to read 1g (gravity), so after averaging it subtracts 1.0 from the Z average.
+		
+		\subsubsection{Key Takeaways}
+		\begin{itemize}
+			\item I²C communication is memory‑mapped: you write/read to register addresses.
+			\item The sensor outputs raw values that must be scaled to meaningful units.
+			\item Calibration removes constant bias.
+		\end{itemize}
+		
+		\subsection{Complementary Filter (\texttt{complementary.c/h})}
+		This file estimates the robot’s tilt angle by blending gyroscope integration and accelerometer measurement.
+		
+		\subsubsection{Theory}
+		A gyroscope measures angular velocity. Integrating it gives angle, but errors accumulate over time (drift). An accelerometer measures gravity direction, giving an absolute angle, but is noisy during motion. The complementary filter fuses them with a constant weighting:
+		\[
+		\text{angle} = 0.98 \times (\text{angle} + \text{gyro} \times dt) + 0.02 \times \text{accel\_angle}
+		\]
+		The numbers 0.98 and 0.02 are the filter coefficients; they sum to 1. This means the filter trusts the integrated gyro more than the accelerometer.
+		
+		\subsubsection{Code}
+		\begin{lstlisting}
+			static float s_angle_deg = 0.0f;
+			static float s_gyro_rate_dps = 0.0f;
+			
+			HAL_StatusTypeDef angle_update(float dt) {
+				mpu6050_axes_t accel, gyro;
+				// Read sensors
+				mpu6050_read_accel(s_i2c, &accel);
+				mpu6050_read_gyro(s_i2c, &gyro);
+				// Convert accelerometer to tilt angle (using atan2)
+				s_gyro_rate_dps = gyro.x;   // assume x axis rotation
+				float accel_angle = atan2f(accel.y, accel.z) * 57.2957795f;  // rad to deg
+				// Complementary filter
+				s_angle_deg = 0.98f * (s_angle_deg + s_gyro_rate_dps * dt) + 0.02f * accel_angle;
+				return HAL_OK;
+			}
+		\end{lstlisting}
+		\textbf{Note:} \texttt{atan2f(y,z)} gives the angle of the gravity vector in radians. Multiplying by \texttt{RAD2DEG} converts to degrees.
+		
+		\subsubsection{Public Interface}
+		\begin{itemize}
+			\item \texttt{angle\_init()} stores the I²C handle.
+			\item \texttt{angle\_update(dt)} must be called at regular intervals (dt is the fixed time step).
+			\item \texttt{angle\_get\_deg()} returns the fused angle.
+			\item \texttt{angle\_get\_gyro\_rate\_dps()} returns the raw gyro rate for telemetry.
+		\end{itemize}
+		
+		\subsection{PID Controller (\texttt{pid.c/h})}
+		\subsubsection{What is PID?}
+		A PID controller computes a control signal to minimise the error between a setpoint (desired value) and the actual measurement. It uses three terms:
+		\begin{itemize}
+			\item Proportional (P): immediate response to current error.
+			\item Integral (I): eliminates steady‑state offset.
+			\item Derivative (D): damps oscillations.
+		\end{itemize}
+		The output is the sum of these terms, clamped to a safe range.
+		
+		\subsubsection{Header}
+		\begin{lstlisting}
+			typedef struct {
+				float kp, ki, kd;
+				float integral_limit;
+				float output_limit;
+			} pid_gains_t;
+			
+			void pid_init(pid_gains_t gains);
+			float pid_compute(float setpoint, float measurement, float dt);
+		\end{lstlisting}
+		
+		\subsubsection{Implementation}
+		\begin{lstlisting}
+			static float s_integral = 0.0f;
+			static float s_prev_error = 0.0f;
+			
+			float pid_compute(float setpoint, float measurement, float dt) {
+				float error = setpoint - measurement;
+				// Integral with clamping
+				s_integral += error * dt;
+				s_integral = clampf(s_integral, -s_gains.integral_limit, s_gains.integral_limit);
+				// Derivative (band‑limited by implicit filtering)
+				float derivative = (error - s_prev_error) / dt;
+				s_prev_error = error;
+				// Compute output
+				float output = (s_gains.kp * error) 
+				+ (s_gains.ki * s_integral) 
+				+ (s_gains.kd * derivative);
+				return clampf(output, -s_gains.output_limit, s_gains.output_limit);
+			}
+		\end{lstlisting}
+		\textbf{Clamping} prevents the integral from winding up when the actuator saturates. The derivative is simply the rate of change of error.
+		
+		\subsubsection{Gains Used in the Project}
+		From \texttt{main.c}:
+		\begin{lstlisting}
+			pid_gains_t gains = {
+				.kp = 55.0f,
+				.ki = 1.2f,
+				.kd = 2.8f,
+				.integral_limit = 60.0f,
+				.output_limit = (float)MOTOR_PWM_MAX,  // 1599
+			};
+		\end{lstlisting}
+		These values were tuned experimentally.
+		
+		\subsection{Motor Driver (\texttt{motor.c/h})}
+		This module controls the two DC motors using PWM and direction GPIO pins.
+		
+		\subsubsection{Header}
+		\begin{lstlisting}
+			typedef enum { MOTOR_LEFT = 0, MOTOR_RIGHT = 1 } motor_id_t;
+			#define MOTOR_PWM_MAX 1599
+			
+			void motor_init(TIM_HandleTypeDef *htim);
+			void motor_set_speed(motor_id_t motor, int16_t speed);
+		\end{lstlisting}
+		
+		\subsubsection{Implementation}
+		\textbf{Initialisation} starts PWM on channels 3 and 4 of the timer (configured in CubeMX for motor control).
+		\begin{lstlisting}
+			void motor_init(TIM_HandleTypeDef *htim) {
+				s_pwm_timer = htim;
+				HAL_TIM_PWM_Start(s_pwm_timer, TIM_CHANNEL_3); // Left motor PWM
+				HAL_TIM_PWM_Start(s_pwm_timer, TIM_CHANNEL_4); // Right motor PWM
+			}
+		\end{lstlisting}
+		
+		\textbf{Speed setting}:
+		\begin{lstlisting}
+			void motor_set_speed(motor_id_t motor, int16_t speed) {
+				// Clamp speed to [-MOTOR_PWM_MAX, MOTOR_PWM_MAX]
+				if (speed > MOTOR_PWM_MAX) speed = MOTOR_PWM_MAX;
+				else if (speed < -MOTOR_PWM_MAX) speed = -MOTOR_PWM_MAX;
+				
+				uint16_t magnitude = (speed < 0) ? (uint16_t)(-speed) : (uint16_t)speed;
+				
+				// Set direction pins based on motor and sign of speed
+				if (motor == MOTOR_RIGHT) {
+					if (speed > 0) {
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_8, GPIO_PIN_SET);   // IN1
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_9, GPIO_PIN_RESET); // IN2
+					} else if (speed < 0) {
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_8, GPIO_PIN_RESET);
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_9, GPIO_PIN_SET);
+					} else {
+						// Speed = 0: stop (both low)
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_8, GPIO_PIN_RESET);
+						HAL_GPIO_WritePin(GPIOD, GPIO_PIN_9, GPIO_PIN_RESET);
+					}
+					// Set PWM duty cycle
+					__HAL_TIM_SET_COMPARE(s_pwm_timer, TIM_CHANNEL_4, magnitude);
+				} else { // MOTOR_LEFT
+					// Similar using PD10,PD11 for direction and TIM_CHANNEL_3 for PWM
+					...
+				}
+			}
+		\end{lstlisting}
+		\textbf{How the motor driver works:}
+		\begin{itemize}
+			\item A dual H‑bridge motor driver needs two digital signals (IN1, IN2) for direction and a PWM signal for speed.
+			\item When IN1=HIGH, IN2=LOW, the motor spins forward; opposite for backward; both LOW = brake/stop.
+			\item The \texttt{\_\_HAL\_TIM\_SET\_COMPARE} macro updates the PWM compare register, setting the duty cycle. The timer’s ARR (auto‑reload) is 1599, so 0‑1599 correspond to 0‑100\% duty.
+		\end{itemize}
+		
+		\subsection{Encoder Driver (\texttt{encoder.c/h})}
+		\subsubsection{Purpose}
+		The robot’s motors have quadrature encoders that output pulse trains. We use input capture on two timer channels to measure the time between pulses, hence the rotation speed (RPM). This driver provides raw period and frequency.
+		
+		\subsubsection{Header}
+		\begin{lstlisting}
+			typedef struct {
+				uint32_t period_ticks;
+				float frequency_hz;
+				uint32_t pulse_count;
+			} encoder_data_t;
+			
+			void encoder_init(TIM_HandleTypeDef *htim);
+			void encoder_handle_ic_callback(TIM_HandleTypeDef *htim);
+			encoder_data_t encoder_get_left_data(void);
+			encoder_data_t encoder_get_right_data(void);
+		\end{lstlisting}
+		
+		\subsubsection{Initialisation}
+		\begin{lstlisting}
+			void encoder_init(TIM_HandleTypeDef *htim) {
+				s_encoder_timer = htim;
+				HAL_TIM_IC_Start_IT(s_encoder_timer, TIM_CHANNEL_1); // Left encoder
+				HAL_TIM_IC_Start_IT(s_encoder_timer, TIM_CHANNEL_2); // Right encoder
+			}
+		\end{lstlisting}
+		Input capture interrupts are enabled, and the HAL will call \texttt{HAL\_TIM\_IC\_CaptureCallback} on each rising edge.
+		
+		\subsubsection{Interrupt Callback}
+		The main.c connects the actual interrupt to our handler:
+		\begin{lstlisting}
+			void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+				encoder_handle_ic_callback(htim);
+			}
+		\end{lstlisting}
+		
+		In \texttt{encoder\_handle\_ic\_callback}, the code:
+		\begin{itemize}
+			\item Checks if the interrupt came from TIM2 (the timer used for encoders).
+			\item Reads the captured timer value for the appropriate channel.
+			\item Calculates the period (in ticks) since the last capture, handling timer overflow.
+			\item Computes frequency = (timer clock) / period.
+			\item Increments a pulse counter.
+		\end{itemize}
+		\paragraph{Frequency calculation} requires knowing the timer’s input clock. The code dynamically determines the timer clock from RCC settings:
+		\begin{lstlisting}
+			HAL_RCC_GetClockConfig(&clk_cfg, &flash_latency);
+			timer_clk_hz = HAL_RCC_GetPCLK1Freq();
+			if (clk_cfg.APB1CLKDivider != RCC_HCLK_DIV1) timer_clk_hz *= 2U;
+			timer_clk_hz /= (htim->Init.Prescaler + 1U);
+		\end{lstlisting}
+		This ensures correct frequency even if the clock tree changes.
+		
+		\subsubsection{Reading Data}
+		The getter functions (\texttt{encoder\_get\_left\_data}) disable interrupts temporarily to read the struct safely, preventing a partially updated value.
+		
+		\subsection{Main Application (\texttt{main.c})}
+		This is where everything comes together. We'll go through the significant parts step by step.
+		
+		\subsubsection{Configuration and Global Variables}
+		\begin{lstlisting}
+			#define CONTROL_LOOP_HZ 200.0f
+			#define CONTROL_DT (1.0f / CONTROL_LOOP_HZ)   // 0.005 s
+			#define TELEMETRY_DIVIDER 10U                  // send telemetry every 10 control cycles
+			
+			volatile float g_angle_deg, g_gyro_dps;
+			volatile int16_t g_motor_cmd;
+			volatile uint8_t telemetry_flag = 1;
+			volatile uint8_t g_uart_busy = 0U;
+		\end{lstlisting}
+		`volatile` tells the compiler these variables can be changed in an interrupt, so it must reload them every time.
+		
+		\subsubsection{System Initialisation: \texttt{start\_robot\_modules()}}
+		\begin{lstlisting}
+			static void start_robot_modules(void) {
+				pid_gains_t gains = { .kp = 55.0f, .ki = 1.2f, .kd = 2.8f,
+					.integral_limit = 60.0f, .output_limit = MOTOR_PWM_MAX };
+				mpu6050_init(&hi2c2);
+				mpu6050_calibrate(&hi2c2, 300U);
+				angle_init(&hi2c2);
+				pid_init(gains);
+				encoder_init(&htim2);
+				motor_init(&htim2);
+				HAL_TIM_Base_Start_IT(&htim6);   // start the control loop timer
+			}
+		\end{lstlisting}
+		The order matters: sensor must be init’d and calibrated before the angle filter and PID are used.
+		
+		\subsection{The Control Loop (TIM6 Interrupt)}
+		TIM6 is configured to fire at 200 Hz. Inside \texttt{HAL\_TIM\_PeriodElapsedCallback}:
+		\begin{lstlisting}
+			void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+				if (htim->Instance != TIM6) return;
+				
+				if (angle_update(CONTROL_DT) != HAL_OK) return;
+				g_angle_deg = angle_get_deg();
+				g_gyro_dps = angle_get_gyro_rate_dps();
+				float command = pid_compute(0.0f, g_angle_deg, CONTROL_DT);
+				g_motor_cmd = (int16_t)command;
+				motor_set_speed(MOTOR_LEFT,  g_motor_cmd);
+				motor_set_speed(MOTOR_RIGHT, g_motor_cmd);
+				
+				g_control_ticks++;
+				if ((g_control_ticks % TELEMETRY_DIVIDER) == 0U)
+				telemetry_flag = 1U;
+			}
+		\end{lstlisting}
+		Here’s the sequence:
+		\begin{enumerate}
+			\item Update the angle using the fixed time step \texttt{CONTROL\_DT}.
+			\item Retrieve the angle and gyro rate (for telemetry).
+			\item Run the PID controller with setpoint = 0 (upright).
+			\item Cast the float command to an int16\_t and send it to both motors.
+			\item Every 10\textsuperscript{th} call, set \texttt{telemetry\_flag} to request a UART transmission.
+		\end{enumerate}
+		
+		\subsubsection{Telemetry}
+		The main loop (in \texttt{while(1)}) checks \texttt{telemetry\_flag} and calls \texttt{send\_telemetry\_nonblocking()}. That function uses \texttt{myPrintf} to send a CSV line: angle, gyro rate, motor command, left encoder frequency, right encoder frequency. It avoids blocking by using a busy flag and the UART transmit complete callback.
+		
+		\subsubsection{Additional Interrupt Service Routines}
+		The encoder callback is linked:
+		\begin{lstlisting}
+			void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+				encoder_handle_ic_callback(htim);
+			}
+		\end{lstlisting}
+		
+		UART transmit complete callback resets the busy flag:
+		\begin{lstlisting}
+			void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
+				if (huart->Instance == USART2) g_uart_busy = 0U;
+			}
+		\end{lstlisting}
+		
+		\subsection{Summary}
+		You’ve now seen the entire firmware of a self‑balancing robot. Each module has a clear responsibility:
+		\begin{itemize}
+			\item \texttt{mpu6050} – low‑level sensor communication.
+			\item \texttt{complementary} – angle estimation (sensor fusion).
+			\item \texttt{pid} – control algorithm.
+			\item \texttt{motor} – actuator interface.
+			\item \texttt{encoder} – speed measurement.
+			\item \texttt{main} – orchestrates everything with precise timing.
+		\end{itemize}
+		
+		This modular structure makes the code reusable, testable, and easier to understand. Feel free to experiment by changing the PID gains or filter coefficients and observing the effect on the robot’s behavior.
 	
 	
 \end{document}
