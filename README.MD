@@ -1,5 +1,7 @@
 # Self‑Balancing Robot – STM32F3 + Keyestudio Kit
 
+[Project Report](Project_Report/Project_Report.pdf)
+
 ## Overview
 This project implements a two‑wheeled self‑balancing robot using the
 STM32F3 Discovery board (STM32F303VCT6) and the Keyestudio Self‑Balancing
