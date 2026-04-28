@@ -361,6 +361,8 @@
 	\subsubsection*{Function: \func{angle\_init}}
 	Resets the angle and rate to zero and saves the I²C handle. It returns \texttt{HAL\_OK}.
 	
+	\newpage
+	
 	\subsubsection*{Function: \func{angle\_update}}
 	\begin{lstlisting}
 		HAL_StatusTypeDef angle_update(float dt) {
@@ -388,9 +390,19 @@
 	A complementary filter is much simpler, requires no tuning of process/measurement covariances, and works extremely well for a balancing robot because the dominant motion is at low frequencies where the accelerometer is reliable.
 	
 	\noindent\textbf{Impact:} This function is called inside the timer ISR at exactly \SI{200}{\hertz}, guaranteed by the hardware timer. Every other module depends on the angle it produces.
-	
+	\newpage 
 	\subsubsection*{Getters}
 	\texttt{angle\_get\_deg()} and \texttt{angle\_get\_gyro\_rate\_dps()} simply return the current values. They are used by the main ISR to update global telemetry variables.
+	
+	Note : Later on we added a more getters for gyro.x gyro.y and gyro.z, same with accel.x accel.y and accel.z, and the tilt angles to we can print it via uart and then show them working on a graph.
+	
+	\begin{figure}[h]
+		\centering
+		\includegraphics[width=1\textwidth]{Figure_1.png}
+		\caption{Gyro and Accelerator Sensor Data}
+		\label{fig:sensordata}
+	\end{figure}  
+	
 	
 	% ------------------------------------------------------------------
 	\subsection{File: \file{pid.c} \& \file{pid.h}}
@@ -578,6 +590,8 @@
 	\end{lstlisting}
 	Using \texttt{volatile} tells the compiler that these variables can change at any time (from an ISR). Without it, the main loop might never see the updated values.
 	
+	\newpage
+	
 	\subsubsection*{Custom \func{myPrintf} function}
 	\begin{lstlisting}
 		int myPrintf(const char* fmt, ...) {
@@ -615,6 +629,8 @@
 		}
 	\end{lstlisting}
 	\textbf{Order matters:} the MPU must be initialised and calibrated before the angle filter starts, and the motors and encoder are started last. Once TIM6 begins, the ISR immediately starts calling \texttt{angle\_update} and \texttt{pid\_compute}. If any peripheral fails, \texttt{Error\_Handler()} is called, which disables interrupts and loops forever.
+	
+	\newpage
 	
 	\subsubsection*{Function: \func{send\_telemetry\_nonblocking}}
 	\begin{lstlisting}
@@ -873,9 +889,6 @@
 		
 		\textbf{Strategy for final fine‑tuning:}
 		\begin{itemize}
-			\item \textbf{Systematic approach:} Use the Ziegler–Nichols step‑response 
-			method or relay‑feedback method to obtain initial estimates of $K_u$ and 
-			$T_u$, then compute $K_p$, $K_i$, $K_d$ accordingly.
 			\item \textbf{Iterative refinement:}
 			\begin{enumerate}
 				\item With $K_i=K_d=0$, increase $K_p$ until the robot oscillates with 

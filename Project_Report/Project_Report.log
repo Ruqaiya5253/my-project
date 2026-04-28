@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999998 (MiKTeX 26.2) (preloaded format=xelatex 2026.4.23)  27 APR 2026 22:22
+This is XeTeX, Version 3.141592653-2.6-0.999998 (MiKTeX 26.2) (preloaded format=xelatex 2026.4.23)  28 APR 2026 20:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -985,67 +985,71 @@ Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
 [10]
+File: Figure_1.png Graphic file (type bmp)
+<Figure_1.png>
+
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+[11]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-[11]
+[12]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 
-Overfull \hbox (45.33774pt too wide) in paragraph at lines 490--498
+Overfull \hbox (45.33774pt too wide) in paragraph at lines 502--510
  [][] 
  []
 
 Missing character: There is no ‑ in font ec-lmr12!
-[12]
+[13]
 Missing character: There is no ‑ in font ec-lmr12!
 
-Overfull \hbox (14.26512pt too wide) in paragraph at lines 550--551
+Overfull \hbox (14.26512pt too wide) in paragraph at lines 562--563
 \T1/lmr/m/n/12 This han-dles timer wraparound grace-fully. The fre-quency is th
 en cal-cu-lated as \T1/lmtt/m/n/12 timer_clk_hz
  []
 
 Missing character: There is no ‑ in font ec-lmr12!
-[13] [14]
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-[15]
-Missing character: There is no ‑ in font ec-lmr12!
+[14] [15]
 Missing character: There is no ‑ in font ec-lmr12!
 [16]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmbx12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ’ in font ec-lmbx12!
-Missing character: There is no ‑ in font ec-lmr12!
 [17]
-Missing character: There is no ’ in font ec-lmbx12!
-Missing character: There is no ‑ in font ec-lmbx12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ’ in font ec-lmbx12!
-Missing character: There is no ‑ in font ec-lmbx12!
-Missing character: There is no ’ in font ec-lmbx12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmbx12!
-Missing character: There is no ’ in font ec-lmbx12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 [18]
+Missing character: There is no ‑ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ’ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ’ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ’ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmbx12!
+Missing character: There is no ’ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+[19]
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmbx12!
+Missing character: There is no ’ in font ec-lmbx12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmbx12!
 Missing character: There is no ‑ in font ec-lmr12!
@@ -1053,6 +1057,7 @@ Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
+[20]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
@@ -1060,8 +1065,8 @@ Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-[19] [20]
-Overfull \hbox (44.60034pt too wide) in paragraph at lines 771--771
+[21]
+Overfull \hbox (44.60034pt too wide) in paragraph at lines 787--787
 []\T1/lmr/bx/n/17.28 Evaluation Ques-tions: PID Con-troller for Self-Balancing
  []
 
@@ -1075,7 +1080,7 @@ Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-[21]
+[22]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
@@ -1084,19 +1089,16 @@ Missing character: There is no ” in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmbx12!
-Missing character: There is no – in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-[22]
 Missing character: There is no ‑ in font ec-lmbx12!
 
-Overfull \hbox (41.53058pt too wide) in paragraph at lines 891--895
+Overfull \hbox (41.53058pt too wide) in paragraph at lines 904--908
 []\T1/lmr/bx/n/12 Telemetrydriven de-bug-ging: \T1/lmr/m/n/12 The teleme-try st
 ring \T1/lmtt/m/n/12 "%0.3f,%0.3f,%d,%0.2f,%0.2f"
  []
 
+[23]
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmbx12!
 Missing character: There is no ‑ in font ec-lmr12!
@@ -1114,34 +1116,33 @@ Missing character: There is no “ in font ec-lmr12!
 Missing character: There is no ” in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-[23]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-[24]
+[24] [25]
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmtt10!
 Missing character: There is no ‑ in font ec-lmtt10!
-Missing character: There is no ‑ in font ec-lmtt10!
-Missing character: There is no ‑ in font ec-lmtt10!
-[25]
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmtt10!
 Missing character: There is no ‑ in font ec-lmtt10!
 [26]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
-Missing character: There is no ’ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmtt10!
+Missing character: There is no ‑ in font ec-lmtt10!
 [27]
 Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ‑ in font ec-lmr12!
+Missing character: There is no ’ in font ec-lmr12!
 [28]
+Missing character: There is no ‑ in font ec-lmr12!
+[29]
 Missing character: There is no ‑ in font ec-lmtt10!
-[29] [30]
+[30] [31]
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
@@ -1149,18 +1150,18 @@ Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ‑ in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
 
-Overfull \hbox (3.49107pt too wide) in paragraph at lines 1255--1256
+Overfull \hbox (3.49107pt too wide) in paragraph at lines 1268--1269
 \T1/lmr/m/n/12 Input cap-ture in-ter-rupts are en-abled, and the HAL will call 
 \T1/lmtt/m/n/12 HAL_TIM_IC_CaptureCallback
  []
 
-[31]
-Missing character: There is no ’ in font ec-lmr12!
 [32]
 Missing character: There is no ’ in font ec-lmr12!
-Missing character: There is no ’ in font ec-lmr12!
 [33]
-Overfull \hbox (40.38876pt too wide) in paragraph at lines 1346--1347
+Missing character: There is no ’ in font ec-lmr12!
+Missing character: There is no ’ in font ec-lmr12!
+[34]
+Overfull \hbox (40.38876pt too wide) in paragraph at lines 1359--1360
 \T1/lmr/m/n/12 The main loop (in \T1/lmtt/m/n/12 while(1)\T1/lmr/m/n/12 ) check
 s \T1/lmtt/m/n/12 telemetry_flag \T1/lmr/m/n/12 and calls \T1/lmtt/m/n/12 send_
 telemetry_nonblocking()\T1/lmr/m/n/12 .
@@ -1176,7 +1177,7 @@ Missing character: There is no – in font ec-lmr12!
 Missing character: There is no – in font ec-lmr12!
 Missing character: There is no – in font ec-lmr12!
 Missing character: There is no ’ in font ec-lmr12!
-[34] (Project_Report.aux)
+[35] (Project_Report.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -1189,12 +1190,12 @@ Package rerunfilecheck Info: File `Project_Report.out' has not changed.
 (rerunfilecheck)             Checksum: 0E9394A9C755186211999B842FF0BACD;12117.
  ) 
 Here is how much of TeX's memory you used:
- 27918 strings out of 402983
- 554870 string characters out of 5453864
+ 27929 strings out of 402983
+ 555046 string characters out of 5453864
  1296849 words of memory out of 5000000
- 56272 multiletter control sequences out of 15000+600000
+ 56281 multiletter control sequences out of 15000+600000
  692803 words of font info for 82 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  102i,10n,107p,531b,2354s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on Project_Report.pdf (34 pages).
+Output written on Project_Report.pdf (35 pages).
