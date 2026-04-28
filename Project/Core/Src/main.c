@@ -151,10 +151,8 @@ static void send_telemetry_nonblocking(void) {
 
     left = encoder_get_left_data();
     right = encoder_get_right_data();
-    myPrintf("%.3f,%.3f,%d,%.2f,%.2f\r\n", g_angle_deg, g_gyro_dps,
-                   g_motor_cmd, left.frequency_hz, right.frequency_hz);
     g_uart_busy = 1U;
-    if (myPrintf("%.3f,%.3f,%d,%.2f,%.2f\r\n", g_angle_deg, g_gyro_dps,
+    if (myPrintf("Tilt: %.3f, AngularRate %.3f, Motor Speed: %d, Left Motor Encoder: %.2f, Right Motor Encoder: %.2f\r\n", g_angle_deg, g_gyro_dps,
                    g_motor_cmd, left.frequency_hz, right.frequency_hz)) {
         g_uart_busy = 0U;
     }
@@ -212,7 +210,7 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
+   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
 
