@@ -240,7 +240,6 @@ int main(void)
   while (1)
   {
     HAL_Delay(100);
-    myPrintf("I was here \r\n");
     if (telemetry_flag) {
       telemetry_flag = 0U;
       send_telemetry_nonblocking();
