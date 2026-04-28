@@ -1,5 +1,7 @@
 # Self‑Balancing Robot – STM32F3 + Keyestudio Kit
 
+[Project Report](Project_Report/Project_Report.pdf)
+
 ## Overview
 This project implements a two‑wheeled self‑balancing robot using the
 STM32F3 Discovery board (STM32F303VCT6) and the Keyestudio Self‑Balancing
@@ -36,22 +38,46 @@ All connections between the STM32F3 Discovery board and the Keyestudio
 shield are summarised below. Ground (`GND`) must be shared between the
 STM32 board and the shield.
 
-| STM32 Pin | Shield Pin / Function | Description |
-|-----------|------------------------|--------------|
-| **PA0**   | TIM2_CH1               | Right motor encoder input (Input Capture) |
-| **PA1**   | TIM2_CH2               | Left motor encoder input (Input Capture) |
-| **PB10**  | TIM2_CH3               | Right motor PWM output (PWM Generation) |
-| **PB11**  | TIM2_CH4               | Left motor PWM output (PWM Generation) |
-| **PD8**   | D12 (Right Motor DirA) | Direction control, right motor (A) |
-| **PD9**   | D8  (Right Motor DirB) | Direction control, right motor (B) |
-| **PD10**  | D10 (Left Motor DirA)  | Direction control, left motor (A) |
-| **PD11**  | D7  (Left Motor DirB)  | Direction control, left motor (B) |
-| **PA9**   | I2C2_SCL               | MPU‑6050 serial clock (I²C) |
-| **PA10**  | I2C2_SDA               | MPU‑6050 serial data (I²C) |
-| **PA2**   | USART2_TX              | Telemetry UART transmit |
-| **PA3**   | USART2_RX              | Telemetry UART receive (optional, for PC) |
-| **GND**   | GND                    | Common ground (must be connected) |
-| **5V**    | 5V (shield encoder supply) | Powers encoder modules (max 100 mA) |
+---
+
+### Table 1 — Full Pin Mapping (Detailed)
+
+| STM32 | Shield Pin  | Function          | Description                                    |
+| ----- | ----------- | ----------------- | ---------------------------------------------- |
+| PA15  | D4 (pin 8)  | R_m encoder input | TIM2_CH1 input capture, measures R_wheel speed |
+| PA1   | D5 (pin 9)  | L_m encoder input | TIM2_CH2 input capture, measures L_wheel speed |
+| PB10  | D9 (pin 4)  | L_m PWM output    | TIM2_CH3 PWM signal for L_m speed control      |
+| PB11  | D10 (pin 3) | R_m PWM output    | TIM2_CH4 PWM signal for R_m speed control      |
+| PD8   | D8 (pin 5)  | R_m direction B   | GPIO output (IN2)                              |
+| PD9   | D12 (pin 2) | R_m direction A   | GPIO output (IN1)                              |
+| PD10  | D7 (pin 6)  | L_m direction A   | GPIO output (IN1)                              |
+| PD11  | D6 (pin 7)  | L_m direction B   | GPIO output (IN2)                              |
+| PA9   | SCL         | I²C clock for IMU | I2C2 serial clock line to MPU-6050             |
+| PA10  | SDA         | I²C data for IMU  | I2C2 serial data line to MPU-6050              |
+| PA2   | TX          | UART transmit     | USART2 TX pin                                  |
+| PA3   | RX          | UART receive      | USART2 RX pin                                  |
+
+---
+
+### Table 2 — Functional Mapping (Firmware-Oriented)
+
+| STM32 Pin | Shield Function     | Description                               |
+| --------- | ------------------- | ----------------------------------------- |
+| PA15      | TIM2_CH1            | Right motor encoder input (Input Capture) |
+| PA1       | TIM2_CH2            | Left motor encoder input (Input Capture)  |
+| PB10      | TIM2_CH3            | Left motor PWM output                     |
+| PB11      | TIM2_CH4            | Right motor PWM output                    |
+| PD8       | D12 (Right DirA)    | Direction control, right motor A          |
+| PD9       | D8 (Right DirB)     | Direction control, right motor B          |
+| PD10      | D10 (Left DirA)     | Direction control, left motor A           |
+| PD11      | D7 (Left DirB)      | Direction control, left motor B           |
+| PA9       | I2C2_SCL            | MPU-6050 serial clock                     |
+| PA10      | I2C2_SDA            | MPU-6050 serial data                      |
+| PA2       | USART2_TX           | Telemetry UART transmit                   |
+| PA3       | USART2_RX           | Telemetry UART receive (optional)         |
+| GND       | GND                 | Common ground (must be connected)         |
+| 5V        | 5V (shield encoder) | Powers encoder modules (max 100 mA)       |
+
 
 * **Note:** The `Vin` pin on the shield (motor supply) should **never** be
   connected to the STM32’s 5 V or 3 V pins. Use a separate battery or
